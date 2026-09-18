@@ -2,12 +2,85 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b09">
   <title>RYKI MAGIC EXPERIENCE · ORLANDO 2027</title>
-  <meta http-equiv="refresh" content="0; url=RYKI%20MAGIC%20EXPERIENCE.pdf">
-  <script>location.replace("RYKI%20MAGIC%20EXPERIENCE.pdf");</script>
+  <style>
+    html, body { margin: 0; padding: 0; background: #0b0b09; }
+    body { font-family: Arial, Helvetica, sans-serif; }
+    #status {
+      position: fixed; inset: 0; display: grid; place-items: center;
+      color: #caa24a; background: #0b0b09; z-index: 10;
+      font-size: 14px; letter-spacing: .08em;
+    }
+    #viewer {
+      width: 100%;
+      padding: 8px 8px 24px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    canvas {
+      display: block;
+      height: auto;
+      box-shadow: 0 1px 10px rgba(0,0,0,.45);
+      background: white;
+    }
+  </style>
 </head>
 <body>
-  <p>Abrindo apresentação...</p>
+  <div id="status">ABRINDO APRESENTAÇÃO...</div>
+  <main id="viewer" aria-label="RYKI Magic Experience"></main>
+
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+
+    const pdfUrl = "./RYKI%20MAGIC%20EXPERIENCE.pdf";
+    const viewer = document.getElementById("viewer");
+    const status = document.getElementById("status");
+
+    async function renderPdf() {
+      try {
+        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+          status.textContent = "ABRINDO APRESENTAÇÃO... " + pageNumber + "/" + pdf.numPages;
+
+          const page = await pdf.getPage(pageNumber);
+          const base = page.getViewport({ scale: 1 });
+
+          const cssWidth = Math.min(window.innerWidth - 16, 960);
+          const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+          const scale = (cssWidth / base.width) * pixelRatio;
+          const viewport = page.getViewport({ scale });
+
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d", { alpha: false });
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          canvas.style.width = cssWidth + "px";
+          canvas.style.maxWidth = "100%";
+
+          viewer.appendChild(canvas);
+
+          await page.render({
+            canvasContext: ctx,
+            viewport: viewport
+          }).promise;
+        }
+
+        status.remove();
+      } catch (err) {
+        status.textContent = "NÃO FOI POSSÍVEL ABRIR A APRESENTAÇÃO.";
+        console.error(err);
+      }
+    }
+
+    renderPdf();
+  </script>
 </body>
 </html>
